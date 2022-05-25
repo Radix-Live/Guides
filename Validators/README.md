@@ -1,4 +1,4 @@
-#### Validator switching procedure (Dockerized setup, using *radixnode*) 
+### Validator switching procedure (Dockerized setup, using *radixnode*) 
 Tested on Ubuntu 20.04 (which is the recommended version per official docs).  
 `stop-validator.sh` is based on FPieper's script for systemd setup.  
 
