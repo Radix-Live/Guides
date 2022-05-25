@@ -1,0 +1,134 @@
+---
+services:
+  core:
+    cap_add:
+      - NET_ADMIN
+    environment:
+      JAVA_OPTS: --enable-preview -server -Xms8g -Xmx8g -XX:MaxDirectMemorySize=2048m -XX:+HeapDumpOnOutOfMemoryError 
+        -XX:+UseCompressedOops -Djavax.net.ssl.trustStore=/etc/ssl/certs/java/cacerts -Djavax.net.ssl.trustStoreType=jks
+        -Djava.security.egd=file:/dev/urandom -DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector
+      RADIXDLT_API_PORT: 3333
+      RADIXDLT_LOG_LEVEL: info
+      RADIXDLT_NETWORK_ID: 1
+      RADIXDLT_NETWORK_SEEDS_REMOTE: ${RADIXDLT_NETWORK_NODE}
+      RADIXDLT_NETWORK_USE_PROXY_PROTOCOL: 'false'
+      RADIXDLT_SIGN_ENABLE: 'true'
+      RADIXDLT_TRANSACTIONS_API_ENABLE: 'true'
+      RADIXDLT_VALIDATOR_KEY_LOCATION: /home/radixdlt/node-keystore.ks
+      RADIX_NODE_KEYSTORE_PASSWORD: ${RADIXDLT_NODE_KEY_PASSWORD}
+    image: radixdlt/radixdlt-core:1.1.1
+    init: true
+    mem_limit: 10000m
+    restart: unless-stopped
+    ports:
+      - 3333:3333
+    ulimits:
+      memlock: '-1'
+      nofile:
+        hard: '65536'
+        soft: '65536'
+    volumes:
+      - core_ledger:/home/radixdlt/RADIXDB
+      - /root/node-config/node-keystore.ks:/home/radixdlt/node-keystore.ks
+
+  nginx:
+    environment:
+      RADIXDLT_NETWORK_USE_PROXY_PROTOCOL: 'false'
+      RADIXDLT_TRANSACTIONS_API_ENABLE: 'true'
+    image: radixdlt/radixdlt-nginx:1.1.2
+    ports:
+      - 443:443
+      - 30000:30000
+    restart: unless-stopped
+    ulimits:
+      nofile:
+        hard: '65536'
+        soft: '65536'
+    volumes:
+      - nginx_secrets:/etc/nginx/secrets
+
+  radix_db:
+    image: postgres:12.9-alpine
+    command: postgres -c listen_addresses='*'
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: "${POSTGRES_SUPERUSER}"
+      POSTGRES_PASSWORD: "${POSTGRES_SUPERUSER_PASSWORD}"
+      POSTGRES_DB: "${POSTGRES_DB_NAME}"
+    volumes:
+      - /WRITEDB:/var/lib/postgresql/data
+    #   - ./pgsql/etc/postgresql:/etc/postgresql
+    ports:
+      - 127.0.0.1:50032:5432  # Allow connections to port 50032 from localhost
+
+  data_aggregator:
+    image: radixdlt/ng-data-aggregator:1.1.2
+    ports:
+      - "5207:80"   # This allows you to connect to the API (for root and health checks) at http://localhost:5207
+      - "1234:1234" # This allows you to connect to the metrics API at http://localhost:1234
+    restart: unless-stopped
+    environment:
+      # WIPE_DATABASE: "true"
+      ASPNETCORE_URLS: "http://*:80" # Binds to 80 on all interfaces
+      RADIX_NG_AGGREGATOR__CustomJsonConfigurationFilePath: "/home/radixdlt/network-gateway/config.json"
+      RADIX_NG_AGGREGATOR__PrometheusMetricsPort: "1234"
+      RADIX_NG_AGGREGATOR__MaxWaitForDbOnStartupMs: "${MAX_DB_WAIT_MS_ON_START}" # Wait for PostGres to boot up
+      RADIX_NG_AGGREGATOR__DisableCoreApiHttpsCertificateChecks: "${DISABLE_CORE_API_CERTIFICATE_CHECKS}"
+      RADIX_NG_AGGREGATOR__NetworkName: "${NETWORK_NAME}"
+      RADIX_NG_AGGREGATOR__ConnectionStrings__AggregatorDbContext: "Host=radix_db;Port=5432;Database=${POSTGRES_DB_NAME};Username=${POSTGRES_SUPERUSER};Password=${POSTGRES_SUPERUSER_PASSWORD}"
+      RADIX_NG_AGGREGATOR__CoreApiNodes__0__Name: "${NODE_0_NAME}"
+      RADIX_NG_AGGREGATOR__CoreApiNodes__0__CoreApiAddress: "${NODE_0_CORE_API_ADDRESS}"
+      RADIX_NG_AGGREGATOR__CoreApiNodes__0__CoreApiAuthorizationHeader: "${NODE_0_CORE_API_AUTHORIZATION_HEADER}"
+      RADIX_NG_AGGREGATOR__CoreApiNodes__0__TrustWeighting: "1"
+      RADIX_NG_AGGREGATOR__CoreApiNodes__0__Enabled: "${NODE_0_ENABLED}"
+      RADIX_NG_AGGREGATOR__CoreApiNodes__1__Name: "${NODE_1_NAME}"
+      RADIX_NG_AGGREGATOR__CoreApiNodes__1__CoreApiAddress: "${NODE_1_CORE_API_ADDRESS}"
+      RADIX_NG_AGGREGATOR__CoreApiNodes__1__CoreApiAuthorizationHeader: "${NODE_1_CORE_API_AUTHORIZATION_HEADER}"
+      RADIX_NG_AGGREGATOR__CoreApiNodes__1__TrustWeighting: "1"
+      RADIX_NG_AGGREGATOR__CoreApiNodes__1__Enabled: "${NODE_1_ENABLED}"
+    volumes:
+      - ./data-aggregator-fixed-configuration.json:/home/radixdlt/network-gateway/config.json
+
+  gateway_api:
+    image: radixdlt/ng-gateway-api:1.1.2
+# OR
+#    image: mleekko/ng-gateway-api:1.1.2-L
+    ports:
+      - "5308:80"   # This allows you to connect to the API at http://localhost:5308
+      - "1235:1235" # This allows you to connect to the metrics API at http://localhost:1235
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_URLS: "http://*:80" # Binds to 80 on all interfaces
+      RADIX_NG_API__GatewayApiVersion: "1.1.2-L"
+      RADIX_NG_API__CustomJsonConfigurationFilePath: "/home/radixdlt/network-gateway/config.json"
+      RADIX_NG_API__PrometheusMetricsPort: "1235"
+      RADIX_NG_API__MaxWaitForDbOnStartupMs: "${MAX_DB_WAIT_MS_ON_START}" # Wait for PostGres to boot up
+      RADIX_NG_API__DisableCoreApiHttpsCertificateChecks: "${DISABLE_CORE_API_CERTIFICATE_CHECKS}"
+      RADIX_NG_API__NetworkName: "${NETWORK_NAME}"
+      RADIX_NG_API__EnableSwagger: "${ENABLE_SWAGGER}"
+      RADIX_NG_API__AcceptableLedgerLag__PreventReadRequestsIfDbLedgerIsBehind: "${PREVENT_OUTDATED_READ_REQUESTS}"
+      RADIX_NG_API__AcceptableLedgerLag__PreventConstructionRequestsIfDbLedgerIsBehind: "${PREVENT_OUTDATED_CONSTRUCTION_REQUESTS}"
+      RADIX_NG_API__ConnectionStrings__ReadOnlyDbContext: "Host=radix_db:5432;Database=${POSTGRES_DB_NAME};Username=${POSTGRES_SUPERUSER};Password=${POSTGRES_SUPERUSER_PASSWORD}"
+      RADIX_NG_API__ConnectionStrings__ReadWriteDbContext: "Host=radix_db:5432;Database=${POSTGRES_DB_NAME};Username=${POSTGRES_SUPERUSER};Password=${POSTGRES_SUPERUSER_PASSWORD}"
+      RADIX_NG_API__CoreApiNodes__0__Name: "${NODE_0_NAME}"
+      RADIX_NG_API__CoreApiNodes__0__CoreApiAddress: "${NODE_0_CORE_API_ADDRESS}"
+      RADIX_NG_API__CoreApiNodes__0__CoreApiAuthorizationHeader: "${NODE_0_CORE_API_AUTHORIZATION_HEADER}"
+      RADIX_NG_API__CoreApiNodes__0__RequestWeighting: "1"
+      RADIX_NG_API__CoreApiNodes__0__Enabled: "${NODE_0_ENABLED}"
+      RADIX_NG_API__CoreApiNodes__1__Name: "${NODE_1_NAME}"
+      RADIX_NG_API__CoreApiNodes__1__CoreApiAddress: "${NODE_1_CORE_API_ADDRESS}"
+      RADIX_NG_API__CoreApiNodes__1__CoreApiAuthorizationHeader: "${NODE_1_CORE_API_AUTHORIZATION_HEADER}"
+      RADIX_NG_API__CoreApiNodes__1__RequestWeighting: "1"
+      RADIX_NG_API__CoreApiNodes__1__Enabled: "${NODE_1_ENABLED}"
+    volumes:
+      - ./gateway-api-fixed-configuration.json:/home/radixdlt/network-gateway/config.json
+
+version: '2.2'
+volumes:
+  core_ledger:
+    driver: local
+    driver_opts:
+      device: /RADIXDB
+      o: bind
+      type: none
+  nginx_secrets:
