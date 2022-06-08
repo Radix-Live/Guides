@@ -205,7 +205,7 @@ wal_keep_segments = 1024
 
 ```
 cd /radixdlt
-radixnode docker setup -n fullnode -t radix://rn1qthu8yn06k75dnwpkysyl8smtwn0v4xy29auzjlcrw7vgduxvnwnst6derj@99.80.126.26
+radixnode docker setup -n fullnode -t radix://rn1qthu8yn06k75dnwpkysyl8smtwn0v4xy29auzjlcrw7vgduxvnwnst6derj@54.216.99.177
 ```
 Configure the node password, as the data folder put: `/RADIXDB`
 `Okay to start the node [Y/n]` - answer "no".
@@ -228,7 +228,7 @@ Add to `~/.bashrc`:
 ```
 Start the node, wait a minute, and see if it syncs
 ```
-radixnode docker start -f radix-fullnode-compose.yml -t radix://rn1qthu8yn06k75dnwpkysyl8smtwn0v4xy29auzjlcrw7vgduxvnwnst6derj@99.80.126.26
+radixnode docker start -f radix-fullnode-compose.yml -t radix://rn1qthu8yn06k75dnwpkysyl8smtwn0v4xy29auzjlcrw7vgduxvnwnst6derj@54.216.99.177
 docker ps -a
 radixnode api core network-status | grep version
 ```
@@ -244,7 +244,7 @@ Delete `radix-fullnode-compose.yml` and upload the files from this gist (4 ea) t
 ```
 # Should be able to do it directly via `docker-compose` but somehow it didn't work for me
 # docker-compose -f radix-fullnode-compose.yml up -d
-radixnode docker start -f radix-fullnode-compose.yml -t radix://rn1qthu8yn06k75dnwpkysyl8smtwn0v4xy29auzjlcrw7vgduxvnwnst6derj@99.80.126.26
+radixnode docker start -f radix-fullnode-compose.yml -t radix://rn1qthu8yn06k75dnwpkysyl8smtwn0v4xy29auzjlcrw7vgduxvnwnst6derj@54.216.99.177
 docker ps -a
 ```
 
