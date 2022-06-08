@@ -1,12 +1,10 @@
 # Radix Gateway API setup (Dockerized)
 
-2022-05-25: A bit outdated, needs updating
-
 ## Introduction
 The setup includes: Radix Full Node + Data Aggregator + Gateway API + Postres DB, all running on the same dedicated server via Docker Compose.
 A Fully Dockerized setup is recommended due to its simplicity and is usually performant enough for private usage of the Gateway API.
 
-See also a variation with the installation of a [standalone Postgres DB + replica](../GatewayAPI-Full)
+See also a variation with the installation of a [standalone Postgres DB + replica](../GatewayAPI-Full).
 
 The result of this setup is Gateway API running on `http://<server_ip>:5308`, Core/System API - on `https://<server_ip>:443` (requires authentication with admin/superadmin passwords).
 
@@ -35,9 +33,10 @@ apt upgrade -y
 mkdir /RADIXDB
 mkdir /WRITEDB
 
-mount /dev/sdb /WRITEDB
+mount /dev/sdb /RADIXDB
 ```
-if it doesn't mount - create FS with `mkfs.ext4 /dev/sdb`
+If it doesn't mount - create FS with `mkfs.ext4 /dev/sdb` and try mounting again.  
+Now to preserve mount after reboot:
 
 ```
 ls -al /dev/disk/by-uuid/
@@ -50,7 +49,7 @@ nano /etc/fstab
 ```
 Append the entry for the second disk, e.g.:
 ``` 
-UUID=52fca22b-b741-4e11-9142-f7bb63ad6e2a /WRITEDB ext4 defaults 0 0
+UUID=52fca22b-b741-4e11-9142-f7bb63ad6e2a /RADIXDB ext4 defaults 0 0
 ```
 
 ``` shell
@@ -65,7 +64,7 @@ reboot
 ``` shell
 df -h # check that it mounted
 
-rm -rf /WRITEDB/lost+found/
+rm -rf /RADIXDB/lost+found/
 ```
 
 #### 2. Installing Docker via Radix CLI (Command-Line Interface)
@@ -74,16 +73,18 @@ rm -rf /WRITEDB/lost+found/
 mkdir /radixdlt
 cd /radixdlt
 
-wget -O radixnode https://github.com/radixdlt/node-runner/releases/download/1.1.1/radixnode-ubuntu-20.04
+wget -O radixnode https://github.com/radixdlt/node-runner/releases/download/1.2.2/radixnode-ubuntu-20.04
 chmod +x radixnode
 sudo mv radixnode /usr/local/bin
 
 radixnode docker configure
 ```
-Exit ssh and relogin back for user addition to group "docker" to take effect.
+Exit ssh login and relogin back for user addition to group "docker" to take effect.
 
 
 #### 3. Configuring Radix services
+This section is a short essence of the [official guide](https://docs.radixdlt.com/main/node-and-gateway/cli-install-node-docker.html),
+please refer to it in case you have any questions.
 
 ```
 cd /radixdlt
@@ -114,6 +115,7 @@ Start the node, wait a minute, and see if it syncs
 ```
 radixnode docker start -f radix-fullnode-compose.yml -t radix://rn1qthu8yn06k75dnwpkysyl8smtwn0v4xy29auzjlcrw7vgduxvnwnst6derj@54.216.99.177
 docker ps -a
+# run several times - the version should increase
 radixnode api core network-status | grep version
 ```
 On a properly running node, you will see that `current_state_version` increases between invocations of `radixnode api core network-status | grep version`.  
@@ -121,8 +123,16 @@ If the Radix Node software works - great! Now put it down, so we can add additio
 ```
 radixnode docker stop -f radix-fullnode-compose.yml
 ```
-Delete `radix-fullnode-compose.yml` and upload the files from this gist (4 ea) to `/radixdlt`
-(can do simply `nano <filename>` and then paste).  
+
+Upload all 4 files from this Guide to `/radixdlt`:
+```shell
+GH_URL="https://raw.githubusercontent.com/Radix-Live/Guides/main/GatewayAPI-Dockerized/files"
+wget -O .env $GH_URL/.env
+wget -O data-aggregator-fixed-configuration.json $GH_URL/data-aggregator-fixed-configuration.json
+wget -O gateway-api-fixed-configuration.json $GH_URL/gateway-api-fixed-configuration.json
+wget -O radix-fullnode-compose.yml $GH_URL/radix-fullnode-compose.yml
+```
+
 Update the files:
 - `.env` - change `RADIXDLT_NODE_KEY_PASSWORD` and `POSTGRES_SUPERUSER_PASSWORD`
 - `radix-fullnode-compose.yml` - adjust `-Xms`, `-Xmx` and `mem_limit` of the `core` service according to the machine's specs (recommended - 1/4 of available RAM, but no more than 8Gb).
@@ -135,7 +145,7 @@ docker ps -a
 
 That's it!   
 The Node should start syncing, Aggregator aggregating, Gateway node responds with "NotSyncedUpError".  
-Sync takes around 12-18 hours, Aggregating up to 36-48 hrs, meanwhile try to `reboot` and see if all containers start properly afterward.
+Sync takes around 12-24 hours, Aggregating up to 36-48 hrs, meanwhile try to `reboot` and see if all containers start properly afterward.
 
 You can check both Node Sync and Data Aggregation progress with:
 ```

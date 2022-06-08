@@ -1,10 +1,10 @@
 # Radix Gateway API setup (Full)
 
-2022-05-25: A bit outdated, needs updating
-
 ## Introduction
 The setup includes: Radix Full Node + Data Aggregator + Gateway API + Postres DB used by Aggregator + Read-only Replica used by the Gateway API itself, all running on the same dedicated server.
 I used `Intel Xeon W-2145, 8/16x 3.70GHz, 128Gb RAM, 4x 480 Gb SSD` but half of RAM/CPU should be more than enough for a single consumer (to separate Porsgres from Node DB we still need at least 3 SSDs for the scenario with replica or 2 SSDs without it).
+
+See also a simpler version of installation where [everything runs in Docker](../GatewayAPI-Dockerized).
 
 The result of this setup is Gateway API running on `http://<server_ip>:5308`, Core/System API - on `https://<server_ip>:443` (requires authentication with admin/superadmin passwords).
 
@@ -33,9 +33,11 @@ mkdir /READDB
 
 mount /dev/sdb /RADIXDB
 mount /dev/sdc /WRITEDB
+# If you have 4 physical disks you can mount /READDB separately, otherise - just skip it and leave on the primary disk
 mount /dev/sdd /READDB
 ```
-if it doesn't mount - create FS with `mkfs.ext4 /dev/sdb`
+If it doesn't mount - create FS with `mkfs.ext4 /dev/sdb` and try mounting again.  
+Now to preserve mount after reboot:
 
 ```
 ls -al /dev/disk/by-uuid/
@@ -76,12 +78,13 @@ rm -rf /READDB/lost+found/
 mkdir /radixdlt
 cd /radixdlt
 
-wget -O radixnode https://github.com/radixdlt/node-runner/releases/download/1.1.1/radixnode-ubuntu-20.04
+wget -O radixnode https://github.com/radixdlt/node-runner/releases/download/1.2.2/radixnode-ubuntu-20.04
 chmod +x radixnode
 sudo mv radixnode /usr/local/bin
 
 radixnode docker configure
 ```
+Exit ssh login and relogin back for user addition to group "docker" to take effect.
 
 #### 3. Installing Postgres
 
@@ -126,11 +129,11 @@ pg_createcluster -d /WRITEDB/data 12 writer -- -D /WRITEDB/data
 > then try again
 
 ``` shell
-exit
+exit             # logout from postgres user
 pg_ctlcluster 12 writer start # or restart
 ps aux | grep postgres
 ```
-You should see two clusters up and running, 7 processes in each. Alternative: `pg_lsclusters`
+You should see two clusters up and running (`main` and `writer`), 7 processes in each. Alternative: `pg_lsclusters`
 
 ``` shell
 sudo -i -u postgres
@@ -146,6 +149,7 @@ nano /etc/postgresql/12/writer/pg_hba.conf
 Alter rule `local   replication     all` from "peer" to "trust".
 
 ``` shell
+exit             # logout from postgres user
 systemctl restart postgresql
 
 sudo -i -u postgres
@@ -161,19 +165,21 @@ systemctl restart postgresql
 
 > Run `pg_lsclusters` to check that it started correctly. main cluster should have Status "online,recovery".
 > I had an error "data directory "/READDB/data" has invalid permissions",
-> solved by: `chmod 750 -R /READDB/data`
+> solved by: `chmod 750 -R /READDB/data` and then restarting the postgres again: `systemctl restart postgresql`. 
 
 ```
 reboot # never hurts
 ```
 
-> *ssh to the node*
+> *ssh to the server*
+
 Run `pg_lsclusters` to check that it started after reboot.
 ``` shell
 cd /radixdlt
 
 sudo -u postgres psql -p 5433
 ```
+Set the password for postgres user (replace `p_myPassword` with your password).
 ``` sql
 CREATE DATABASE radix_ledger;
 GRANT CONNECT ON DATABASE radix_ledger TO postgres;
@@ -191,9 +197,10 @@ systemctl restart postgresql
 ```
 Run `pg_lsclusters` to check that it started correctly.
 
-> Tune memory on both main and replica Postgres instances: https://pgtune.leopard.in.ua/#/ (DB Type=oltp, use 1/3 of server's RAM, 16-32 Gb should be more than enough)
-> just copy settings and  append to the bottom the conf file (`/etc/postgresql/12/writer/postgresql.conf` and `/etc/postgresql/12/main/postgresql.conf`)
-> Do writer first, then restart both services one-by-one, then do main, then restart main again
+> Tune memory on both main and replica Postgres instances: https://pgtune.leopard.in.ua/#/ 
+> (DB Type=oltp, use 1/3 of server's RAM, 16-32 Gb should be more than enough; CPUs - half of server's threads)
+> just copy settings and  append to the bottom the conf files (`/etc/postgresql/12/writer/postgresql.conf` and `/etc/postgresql/12/main/postgresql.conf`).
+> Stop postgres (`pg_ctlcluster 12 main stop` and `pg_ctlcluster 12 writer stop`), then update the above files, then bring up writer first, then bring up main.
 
 Increase archive storage on the writer cluster. This will allow replica to resync even after prolonged downtime but will consume some disk space (around 10-15Gb). Use smaller value if this is a concern. Add to the conf file:
 ```
@@ -202,12 +209,14 @@ wal_keep_segments = 1024
 ```
 
 #### 5. Configuring Radix services
+This section is a short essence of the [official guide](https://docs.radixdlt.com/main/node-and-gateway/cli-install-node-docker.html),
+please refer to it in case you have any questions.
 
 ```
 cd /radixdlt
 radixnode docker setup -n fullnode -t radix://rn1qthu8yn06k75dnwpkysyl8smtwn0v4xy29auzjlcrw7vgduxvnwnst6derj@54.216.99.177
 ```
-Configure the node password, as the data folder put: `/RADIXDB`
+Configure the node password, as the data directory for the ledger put: `/RADIXDB`  
 `Okay to start the node [Y/n]` - answer "no".
 
 Setup nginx passwords (one at a time):
@@ -230,6 +239,7 @@ Start the node, wait a minute, and see if it syncs
 ```
 radixnode docker start -f radix-fullnode-compose.yml -t radix://rn1qthu8yn06k75dnwpkysyl8smtwn0v4xy29auzjlcrw7vgduxvnwnst6derj@54.216.99.177
 docker ps -a
+# run several times - the version should increase
 radixnode api core network-status | grep version
 ```
 
@@ -237,20 +247,27 @@ If it works - great! Now put it down
 ```
 radixnode docker stop -f radix-fullnode-compose.yml
 ```
-Delete `radix-fullnode-compose.yml` and upload the files from this gist (4 ea) to `/radixdlt`.
-(can do simply `nano <filename>` and then paste)
+
+Upload all 4 files from this Guide to `/radixdlt`:
+```shell
+GH_URL="https://raw.githubusercontent.com/Radix-Live/Guides/main/GatewayAPI-Full/files"
+wget -O .env $GH_URL/.env
+wget -O data-aggregator-fixed-configuration.json $GH_URL/data-aggregator-fixed-configuration.json
+wget -O gateway-api-fixed-configuration.json $GH_URL/gateway-api-fixed-configuration.json
+wget -O radix-fullnode-compose.yml $GH_URL/radix-fullnode-compose.yml
+```
+
+Edit the `.env` file and set your passwords for `RADIXDLT_NODE_KEY_PASSWORD` and `POSTGRES_SUPERUSER_PASSWORD`.
 
 #### 6. Starting everything
 ```
-# Should be able to do it directly via `docker-compose` but somehow it didn't work for me
-# docker-compose -f radix-fullnode-compose.yml up -d
 radixnode docker start -f radix-fullnode-compose.yml -t radix://rn1qthu8yn06k75dnwpkysyl8smtwn0v4xy29auzjlcrw7vgduxvnwnst6derj@54.216.99.177
 docker ps -a
 ```
 
 That's it!
-The Node should start syncing, Aggregator aggregating, Gateway node reponds with "NotSyncedUpError".
-Sync takes around 6-12 hours, Aggregating up to 24-36 hrs, meanwhile try to `reboot` and see if all containers start properly afterward.
+The Node should start syncing, Aggregator aggregating, Gateway node responds with "NotSyncedUpError".
+Sync takes around 12-24 hours, Aggregating up to 36-48 hrs, meanwhile try to `reboot` and see if all containers start properly afterward.
 
 You can check both Node Sync and Data Aggregation progress with:
 ```
