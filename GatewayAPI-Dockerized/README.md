@@ -1,7 +1,7 @@
 # Radix Gateway API setup (Dockerized)
 
 ## Introduction
-The setup includes: Radix Full Node + Data Aggregator + Gateway API + Postres DB, all running on the same dedicated server via Docker Compose.
+The setup includes: Radix Full Node + Data Aggregator + Gateway API + Postgres DB, all running on the same dedicated server via Docker Compose.
 A Fully Dockerized setup is recommended due to its simplicity and is usually performant enough for private usage of the Gateway API.
 
 See also a variation with the installation of a [standalone Postgres DB + replica](../GatewayAPI-Full).
@@ -111,7 +111,7 @@ Add to `~/.bashrc`:
 ```
 . ~/.bashrc
 ```
-Start the node, wait a minute, and see if it syncs
+Now, let's test if everything is OK so far. Start the node, wait a minute, and see if it syncs
 ```
 radixnode docker start -f radix-fullnode-compose.yml -t radix://rn1qthu8yn06k75dnwpkysyl8smtwn0v4xy29auzjlcrw7vgduxvnwnst6derj@54.216.99.177
 docker ps -a
@@ -120,8 +120,14 @@ radixnode api core network-status | grep version
 ```
 On a properly running node, you will see that `current_state_version` increases between invocations of `radixnode api core network-status | grep version`.  
 If the Radix Node software works - great! Now put it down, so we can add additional services.
-```
+```shell
 radixnode docker stop -f radix-fullnode-compose.yml
+```
+By default, the node starts with `RADIXDLT_TRANSACTIONS_API_ENABLE=false` which creates a 
+ledger state missing raw transactions' data required by Gateway API. Cleanup the ledger 
+dir to remove it.
+```shell
+rm -rf /RADIXDB/*
 ```
 
 Upload all 4 files from this Guide to `/radixdlt`:

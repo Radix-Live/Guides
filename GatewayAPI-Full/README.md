@@ -1,7 +1,7 @@
 # Radix Gateway API setup (Full)
 
 ## Introduction
-The setup includes: Radix Full Node + Data Aggregator + Gateway API + Postres DB used by Aggregator + Read-only Replica used by the Gateway API itself, all running on the same dedicated server.
+The setup includes: Radix Full Node + Data Aggregator + Gateway API + Postgres DB used by Aggregator + Read-only Replica used by the Gateway API itself, all running on the same dedicated server.
 I used `Intel Xeon W-2145, 8/16x 3.70GHz, 128Gb RAM, 4x 480 Gb SSD` but half of RAM/CPU should be more than enough for a single consumer (to separate Porsgres from Node DB we still need at least 3 SSDs for the scenario with replica or 2 SSDs without it).
 
 See also a simpler version of installation where [everything runs in Docker](../GatewayAPI-Dockerized).
@@ -235,18 +235,6 @@ Add to `~/.bashrc`:
 ```
 . ~/.bashrc
 ```
-Start the node, wait a minute, and see if it syncs
-```
-radixnode docker start -f radix-fullnode-compose.yml -t radix://rn1qthu8yn06k75dnwpkysyl8smtwn0v4xy29auzjlcrw7vgduxvnwnst6derj@54.216.99.177
-docker ps -a
-# run several times - the version should increase
-radixnode api core network-status | grep version
-```
-
-If it works - great! Now put it down
-```
-radixnode docker stop -f radix-fullnode-compose.yml
-```
 
 Upload all 4 files from this Guide to `/radixdlt`:
 ```shell
@@ -269,7 +257,10 @@ That's it!
 The Node should start syncing, Aggregator aggregating, Gateway node responds with "NotSyncedUpError".
 Sync takes around 12-24 hours, Aggregating up to 36-48 hrs, meanwhile try to `reboot` and see if all containers start properly afterward.
 
-You can check both Node Sync and Data Aggregation progress with:
+To check the node sync progress you can run `radixnode api core network-status | grep version` 
+several times - the version should increase between invocations.
+
+Also, you can check both Node Sync and Data Aggregation progress with:
 ```
 sudo -u postgres psql -d radix_ledger -c $'select * from ledger_status;'
 ```

@@ -1,4 +1,4 @@
-### Validator switching procedure (Dockerized setup, using *radixnode*) 
+### I. Validator switching procedure (Dockerized setup, using *radixnode*) 
 Tested on Ubuntu 20.04 (which is the recommended version per official docs).  
 `stop-validator.sh` is based on FPieper's script for systemd setup.  
 
@@ -39,3 +39,17 @@ Tested on Ubuntu 20.04 (which is the recommended version per official docs).
 
 
 <sup>*</sup> The `stop-validator.sh` script switches the node to using the non-validator KS, but doesn't start the node itself. You can do it manually, or just adapt the script to your needs.
+
+
+### II. Validator upgrade procedure (Dockerized setup, using *radixnode*)
+
+##### Prerequisites
+Check the "Prerequisites" section above 👆
+
+##### Upgrade sequence
+0. ssh to the Validator's server.
+1. Update `radix-fullnode-compose.yml` - put updated container versions and make sure to apply other required changes (like `JAVA_OPTS: --enable-preview`).
+2. Edit `upgrade.sh` and put the same container versions there.
+3. `upgrade.sh` executes `stop-validator.sh`, so if you have updated the later - make sure that your updates don't brake anything  
+4. Run `./upgrade.sh`.
+

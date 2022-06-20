@@ -1,5 +1,12 @@
 #!/bin/bash
 
+# apt install -y jq
+
+# Examples:
+# ./stop-validator.sh
+# ./stop-validator.sh force
+# ./stop-validator.sh keep-key
+
 HOST="https://localhost"
 export DISABLE_VERSION_CHECK="true"
 
@@ -41,8 +48,11 @@ then
   echo "Validator completed proposal - stopping now...."
   radixnode docker stop -f radix-fullnode-compose.yml
   check_return_code
-  mv -f /root/node-config/node-keystore.ks /root/node-config/node-keystore.validator.ks
-  mv -f /root/node-config/node-keystore.blank.ks /root/node-config/node-keystore.ks 
+  if [[ "$1" != "keep-key" ]]
+  then
+    mv -f /root/node-config/node-keystore.ks /root/node-config/node-keystore.validator.ks
+    mv -f /root/node-config/node-keystore.blank.ks /root/node-config/node-keystore.ks
+  fi
 fi
 
 echo "Script finished ..."
