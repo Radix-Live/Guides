@@ -9,5 +9,7 @@
 3. [Using snapshots to speed up sync](LedgerSnapshots) (both Node and Gateway API)
 
 ### Validators
-1. [Validator switching procedure (Dockerized setup, using *radixnode*)](Validators)
+1. [Validator switching procedure](Validators) (Dockerized setup, using *radixnode*)
 
+### Resources
+Just [a list of stuff we provide](Resources) that can help with developing on Radix.
