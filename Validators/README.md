@@ -53,3 +53,5 @@ Check the "Prerequisites" section above 👆
 3. `upgrade.sh` executes `stop-validator.sh`, so if you have updated the later - make sure that your updates don't brake anything  
 4. Run `./upgrade.sh`.
 
+### III. Restoring the Validator node database from a snapshot
+See [Snapshots](Snapshots).
