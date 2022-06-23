@@ -18,7 +18,10 @@ sudo systemctl stop radixdlt-node
 ```
 
 ##### 3. Download the latest snapshot
-3a. From CDN  
+
+<details> 
+  <summary>3a. From CDN  </summary>
+
 1. Browse the [Latest Snapshots on CDN](https://snapshots.radix.live/Validators-Latest/).  
     Usually the latest backup would have the today's date (they are uploaded daily at ~00:15 UTC).  
 2. Set the date to a variable, for example:
@@ -30,9 +33,13 @@ sudo systemctl stop radixdlt-node
     curl -O https://radix-snapshots.b-cdn.net/$DIR/RADIXDB-no-api.tar.zst
     ```
 This should give you the fastest download speed. For some weird reason, in some locations this is very, very slow.  
-If you see that the download speed is less than 25MB/sec - try cancelling the download and using option `b`.  
+If you see that the download speed is less than 25MB/sec - try cancelling the download and using option `b`.
 
-3b. From a server in Germany
+</details>
+
+<details> 
+  <summary>3b. From a server in Germany</summary>
+
 1. Set connection details to a variable
     ```shell
     SSH_HOST=u306644-sub1@u306644.your-storagebox.de
@@ -41,14 +48,17 @@ If you see that the download speed is less than 25MB/sec - try cancelling the do
     ```shell
     DIR=$(echo "ls -1 ????-??-??" | sftp $SSH_HOST | grep -v "sftp> " | sed 's/.$//' | tail -n 1)
     ```
-    You might need to confirm adding the server to known hosts.  
-    When prompted for password, enter: `S4yNVUFpRfWABrgP`.  
+   You might need to confirm adding the server to known hosts.  
+   When prompted for password, enter: `S4yNVUFpRfWABrgP`.  
 3. Make sure that it was set properly: `echo $DIR`.
 4. Download the snapshot
     ```shell
     scp -P 23 $SSH_HOST:$DIR/RADIXDB-no-api.tar.zst ./
     ```
-    You might need to confirm adding to known hosts again and enter the same password one more time.
+   You might need to confirm adding to known hosts again and enter the same password one more time.
+
+</details>
+
 
 ##### 4. Unpack
 Here `/RADIXDB` is the directory where Node's ledger DB resides. Change it if needed.
