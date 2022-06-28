@@ -63,8 +63,17 @@ If you see that the download speed is less than 25MB/sec - try cancelling the do
 ##### 4. Unpack
 Here `/RADIXDB` is the directory where Node's ledger DB resides. Change it if needed.
 ```shell
-rm -rf /RADIXDB/*
-tar --use-compress-program=zstdmt -xvf RADIXDB-no-api.tar.zst -C /RADIXDB/
+LEDGER_DIR=/RADIXDB
+rm -rf $LEDGER_DIR/*
+tar --use-compress-program=zstdmt -xvf RADIXDB-no-api.tar.zst -C $LEDGER_DIR/
+```
+Update permissions
+```shell
+# if you are running via Docker
+sudo chown -R systemd-coredump:systemd-coredump $LEDGER_DIR
+
+# if you are running via systemd
+sudo chown -R radixdlt:radixdlt $LEDGER_DIR
 ```
 
 ##### 5. Start the node

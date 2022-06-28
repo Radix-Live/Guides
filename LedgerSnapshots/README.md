@@ -56,6 +56,8 @@ scp -P 23 $SSH_USER@$SSH_HOST:$DIR/radix_ledger.tar.zst ./
     ```shell
     rm -rf /RADIXDB/*
     tar --use-compress-program=zstdmt -xvf RADIXDB-api.tar.zst -C /RADIXDB/
+    # Ensure proper permissions
+    sudo chown -R systemd-coredump:systemd-coredump /RADIXDB
     ```
 - b) Postgres - if you are running Postgres in a Docker container ([**GatewayAPI-Dockerized**](../GatewayAPI-Dockerized))
     ```shell
