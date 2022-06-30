@@ -73,7 +73,7 @@ rm -rf /RADIXDB/lost+found/
 mkdir /radixdlt
 cd /radixdlt
 
-wget -O radixnode https://github.com/radixdlt/node-runner/releases/download/1.2.2/radixnode-ubuntu-20.04
+wget -O radixnode https://github.com/radixdlt/node-runner/releases/download/1.3.0/radixnode-ubuntu-20.04
 chmod +x radixnode
 sudo mv radixnode /usr/local/bin
 

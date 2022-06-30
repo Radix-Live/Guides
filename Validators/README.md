@@ -26,8 +26,8 @@ Tested on Ubuntu 20.04 (which is the recommended version per official docs).
 0. ssh to both servers.
 1. Backup Node - if you have changed any container versions in the `radix-fullnode-compose.yml` - make sure to pull them beforehand:
     ```
-    docker pull radixdlt/radixdlt-core:1.2.2
-    docker pull radixdlt/radixdlt-nginx:1.2.2
+    docker pull radixdlt/radixdlt-core:1.3.0
+    docker pull radixdlt/radixdlt-nginx:1.3.0
     ```
 2. Backup Node - switch to using Validator keystore (you can also just copy, but I choose to move, so I know which KS is used atm)
     ```shell

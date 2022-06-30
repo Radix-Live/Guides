@@ -31,7 +31,7 @@ While it is suitable for ad-hoc requests and testing the integration, it is stro
 Alternatively, you can use any of the [publicly available APIs](https://www.radixscan.io/CommunityGateways.shtml) (rate limits may apply, please check the site of the API you intend to use).
 
 #### 1. Obtaining the latest state version
-[ReDocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/radixdlt/radixdlt-network-gateway/1.1.4/gateway-api-spec.yaml&nocors#tag/Status/paths/~1gateway/post)
+[ReDocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/radixdlt/radixdlt-network-gateway/1.1.6/gateway-api-spec.yaml&nocors#tag/Status/paths/~1gateway/post)
 | [Postman](https://documenter.getpostman.com/view/14449947/UVXnHaJf#26c0a889-75c4-4a36-9cd3-2d79aa537d99)  
 In the response, `gateway.ledger_state.version` is the latest version of the Network State in the node's aggregated data, while `gateway.target_ledger_state.version` is the latest version observed on the Network by the Core API node.
 
@@ -40,7 +40,7 @@ In the response from a properly functioning node they should:
 2) increase at least every couple of seconds (this means that the Radix Full Node is properly synced with the Radix Network).
 
 #### 2. Getting the account balances
-[Redocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/radixdlt/radixdlt-network-gateway/1.1.4/gateway-api-spec.yaml&nocors#tag/Account/paths/~1account~1balances/post)
+[Redocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/radixdlt/radixdlt-network-gateway/1.1.6/gateway-api-spec.yaml&nocors#tag/Account/paths/~1account~1balances/post)
 | [Postman](https://documenter.getpostman.com/view/14449947/UVXnHaJf#2a0fe47c-79af-4c24-9651-33f1e45ebab9)  
 Note that all balances in Radix APIs are in `attos`. 1 XRD (or any other asset) is equal to `1 x 10^18` attos, or `1,000,000,000,000,000,000`.
 
@@ -49,7 +49,7 @@ Radix account addresses can be validated with RegExp: `^rdx1[02-9AC-HJ-NP-Zac-hj
 ("rdx1" prefix followed by 61 letters and numbers, excluding `[1, b, i, o]`, 7<sup>th</sup> symbol from right should be one of `[c, g, q, s]`).
 
 #### 4. Getting account transactions
-[Redocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/radixdlt/radixdlt-network-gateway/1.1.4/gateway-api-spec.yaml&nocors#tag/Account/paths/~1account~1transactions/post)
+[Redocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/radixdlt/radixdlt-network-gateway/1.1.6/gateway-api-spec.yaml&nocors#tag/Account/paths/~1account~1transactions/post)
 | [Postman](https://documenter.getpostman.com/view/14449947/UVXnHaJf#c6c7cd44-f093-4298-949c-4f757437e864)  
 Transactions here are ordered by date (the newest first) and contain full info (no need to request additional details on each transaction specifically).
 There are different types of actions a transaction can contain (see data classes of the OpenAPI spec), the most common is `TransferTokens` actions.
@@ -62,19 +62,19 @@ Here is an example of how to decode messages in [Java](https://gist.github.com/M
 Encrypting/decrypting private messages is outside the scope of this doc.
 
 #### 5. Getting transaction details
-[Redocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/radixdlt/radixdlt-network-gateway/1.1.4/gateway-api-spec.yaml&nocors#tag/Transaction/paths/~1transaction~1status/post)
+[Redocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/radixdlt/radixdlt-network-gateway/1.1.6/gateway-api-spec.yaml&nocors#tag/Transaction/paths/~1transaction~1status/post)
 | [Postman](https://documenter.getpostman.com/view/14449947/UVXnHaJf#645f0327-53b6-439b-bb6f-6bf3fcdb4fcc)  
 Note that Radix doesn't have a concept of "network confirmations" - once Validators have voted on the transaction, its status becomes "CONFIRMED" which means that the transaction is final and cannot be reverted.
 
 #### 6. Sending a transaction
 Sending the transaction on Radix consists of three steps: Building the TX, Finalizing the TX, and Submitting it to the Network.
 ##### 6.1. via the Core API
-An example of how to send a transaction (in Java) can be found in the [Postman Collection](https://documenter.getpostman.com/view/14449947/UVXnHaJh#fa1c4ac9-345c-4151-adc8-e90153a59a2b) or [ReDocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/radixdlt/radixdlt/1.2.2/radixdlt-core/radixdlt/src/main/java/com/radixdlt/api/core/api.yaml&nocors#tag/track_xrd_example).
+An example of how to send a transaction (in Java) can be found in the [Postman Collection](https://documenter.getpostman.com/view/14449947/UVXnHaJh#fa1c4ac9-345c-4151-adc8-e90153a59a2b) or [ReDocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/radixdlt/radixdlt/1.3.0/radixdlt-core/radixdlt/src/main/java/com/radixdlt/api/core/api.yaml&nocors#tag/track_xrd_example).
 
 ##### 6.2. via the Gateway API
 The steps performed will be similar to the example with Core API above, except you would need to sign the TX with your own private keys instead of performing a request to sign it with your Node's keys.  
 Here are the endpoints in Gateway API that should be used:
-[Redocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/radixdlt/radixdlt-network-gateway/1.1.4/gateway-api-spec.yaml&nocors#tag/Transaction/paths/~1transaction~1build/post)
+[Redocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/radixdlt/radixdlt-network-gateway/1.1.6/gateway-api-spec.yaml&nocors#tag/Transaction/paths/~1transaction~1build/post)
 | [Postman](https://documenter.getpostman.com/view/14449947/UVXnHaJf#efd465b2-939e-4760-860d-969d45c599a0).
 
 #### 7. Signing the transaction
@@ -108,7 +108,7 @@ const s_bytes = utilities.convertToArray(hashOfBlobToSign);
 
 #### 8. Getting the native token (XRD) resource identifier
 See `/token/native` in the Gateway API:
-[Redocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/radixdlt/radixdlt-network-gateway/1.1.4/gateway-api-spec.yaml&nocors#tag/Token/paths/~1token~1native/post)
+[Redocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/radixdlt/radixdlt-network-gateway/1.1.6/gateway-api-spec.yaml&nocors#tag/Token/paths/~1token~1native/post)
 | [Postman](https://documenter.getpostman.com/view/14449947/UVXnHaJf#c9f6520b-34c7-48d7-965b-51e1d07e1cdc)
 
 #### 9. Integration Details
