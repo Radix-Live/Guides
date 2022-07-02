@@ -85,3 +85,16 @@ radixnode docker start -f radix-fullnode-compose.yml -t radix://rn1qthu8yn06k75d
 sudo systemctl start radixdlt-node
 ```
 
+#### Troubleshooting
+It didn't work? Make sure that:
+1. You have changed the directory's owner (step 4).
+2. The validator is running with `RADIXDLT_TRANSACTIONS_API_ENABLE=false`
+```shell
+# Docker
+docker logs -t radixdlt_core_1 2>&1 | head -n 200 | grep "TRANSACTIONS_API_ENABLE"
+
+# systemd
+cat /etc/radixdlt/node/default.config | grep "api.transactions.enable"
+```
+
+
