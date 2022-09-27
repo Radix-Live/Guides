@@ -85,7 +85,7 @@ Signing is performed via a special endpoint in your Node (see #6.1)
 1. Here is an example in Python: https://radixtalk.com/t/how-do-i-locally-sign-a-transaction-with-a-private-key/157
 2. NodeJs (using https://www.npmjs.com/package/secp256k1):
 ```
-const s_bytes = utilities.convertToArray(hashOfBlobToSign);
+    const s_bytes = utilities.convertToArray(hashOfBlobToSign);
     const privkey_bytes = utilities.convertToArray(privkey);
     const sigObj = secp256k1.ecdsaSign(s_bytes, privkey_bytes)
     const der = utilities.buf2hex(secp256k1.signatureExport(sigObj.signature));
@@ -104,6 +104,24 @@ const s_bytes = utilities.convertToArray(hashOfBlobToSign);
         "submit": true
     });
 ```
+where `utilities` is:
+```
+exports.convertToArray = function (data) {
+    var result = [];
+
+    for (var i = 0; i < data.length; i += 2) {
+        result.push(parseInt(data.substring(i, i + 2), 16));
+    }
+    result = Uint8Array.from(result)
+    return result;
+}
+exports.buf2hex = function (buffer) { // buffer is an ArrayBuffer
+    return [...new Uint8Array(buffer)]
+        .map(x => x.toString(16).padStart(2, '0'))
+        .join('');
+}
+```
+
 3. Java (requires [radixdlt-java-common](https://github.com/Radix-Live/radix-java-common) library:  https://gist.github.com/Mleekko/92889469ca723a5b3d581ceec66bef1a
 
 #### 8. Getting the native token (XRD) resource identifier
