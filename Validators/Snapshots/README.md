@@ -5,7 +5,7 @@ Please refer to the original guide for detailed explanations.
 
 ##### 1. Prepare
 ```shell
-apt install zstd
+sudo apt install zstd
 ```
 
 ##### 2. Stop the node
@@ -19,14 +19,41 @@ sudo systemctl stop radixdlt-node
 
 ##### 3. Download the latest snapshot
 
+
 <details> 
-  <summary>3a. From CDN  </summary>
+  <summary>3a. Fast Download from multiple sources <b>(recommended)</b></summary>
+
+Run [this script](https://snapshots.radix.live/latest-validator.sh) to download the snapshot from up to 3 available mirrors.
+
+</details>
+
+<details>
+  <summary>3b. In case the above link doesn't open</summary>
+Here is an example script, but you would need to put the current date in UTC,
+and manually check whether the files actually exist (e.g. `wget &lt;file url&gt;`)
+
+```shell
+#!/bin/bash
+
+sudo apt install -y aria2
+
+FILE=2023-08-19/RADIXDB-no-api.tar.zst
+
+aria2c -x3 ftp://snapshots.radix.live/$FILE \
+           ftp://u306644-sub1:S4yNVUFpRfWABrgP@u306644.your-storagebox.de/$FILE \
+           https://radix-snapshots.b-cdn.net/$FILE
+
+```
+</details>
+
+<details> 
+  <summary>3c. From CDN (legacy)</summary>
 
 1. Browse the [Latest Snapshots on CDN](https://snapshots.radix.live/Validators-Latest/).  
     Usually the latest backup would have the today's date (they are uploaded daily at ~00:15 UTC).  
 2. Set the date to a variable, for example:
     ```shell
-    DIR=2022-06-15
+    DIR=2023-08-15
     ```
 3. Download with curl or wget:
     ```shell
@@ -38,7 +65,7 @@ If you see that the download speed is less than 25MB/sec - try cancelling the do
 </details>
 
 <details> 
-  <summary>3b. From a server in Germany</summary>
+  <summary>3d. From a server in Germany (legacy)</summary>
 
 1. Set connection details to a variable
     ```shell
