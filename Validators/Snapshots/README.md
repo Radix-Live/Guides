@@ -37,7 +37,7 @@ and manually check whether the files actually exist (e.g. `wget &lt;file url&gt;
 
 sudo apt install -y aria2
 
-FILE=2023-08-19/RADIXDB-no-api.tar.zst
+FILE=2023-08-15/RADIXDB-no-api.tar.zst
 
 aria2c -x3 ftp://snapshots.radix.live/$FILE \
            ftp://u306644-sub1:S4yNVUFpRfWABrgP@u306644.your-storagebox.de/$FILE \
