@@ -26,7 +26,7 @@ sudo systemctl stop radixdlt-node
 
 Run [this script](https://snapshots.radix.live/latest-validator.sh) to download the snapshot from up to 3 available mirrors.  
 It will take up to a minute for the download to reach max speed, and it is OK
-if aria2c drops some of the slowest servers at the start.  
+if `aria2c` drops some of the slowest servers at the start.  
 You can see the number of active connections under "CN:".  
 The progress is saved even if you kill/restart the download.
 
@@ -36,7 +36,7 @@ The progress is saved even if you kill/restart the download.
   <summary>3b. In case the above link doesn't open</summary>
 
 Here is an example script, but you would need to put the current date in UTC,
-and manually check whether the files actually exist (e.g. `wget &lt;file url&gt;`).
+and manually check whether the files actually exist (e.g. `wget <file url>`).
 
 ```shell
 #!/bin/bash
