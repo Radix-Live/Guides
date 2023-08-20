@@ -5,6 +5,7 @@ Please refer to the original guide for detailed explanations.
 
 ##### 1. Prepare
 ```shell
+sudo apt update
 sudo apt install zstd
 ```
 
@@ -23,14 +24,19 @@ sudo systemctl stop radixdlt-node
 <details> 
   <summary>3a. Fast Download from multiple sources <b>(recommended)</b></summary>
 
-Run [this script](https://snapshots.radix.live/latest-validator.sh) to download the snapshot from up to 3 available mirrors.
+Run [this script](https://snapshots.radix.live/latest-validator.sh) to download the snapshot from up to 3 available mirrors.  
+It will take up to a minute for the download to reach max speed, and it is OK
+if aria2c drops some of the slowest servers at the start.  
+You can see the number of active connections under "CN:".  
+The progress is saved even if you kill/restart the download.
 
 </details>
 
 <details>
   <summary>3b. In case the above link doesn't open</summary>
+
 Here is an example script, but you would need to put the current date in UTC,
-and manually check whether the files actually exist (e.g. `wget &lt;file url&gt;`)
+and manually check whether the files actually exist (e.g. `wget &lt;file url&gt;`).
 
 ```shell
 #!/bin/bash
@@ -39,9 +45,10 @@ sudo apt install -y aria2
 
 FILE=2023-08-15/RADIXDB-no-api.tar.zst
 
-aria2c -x3 ftp://snapshots.radix.live/$FILE \
-           ftp://u306644-sub1:S4yNVUFpRfWABrgP@u306644.your-storagebox.de/$FILE \
-           https://radix-snapshots.b-cdn.net/$FILE
+aria2c -x3 -s16 -k4M --piece-length=4M --disk-cache=256M --lowest-speed-limit=500k \
+       ftp://snapshots.radix.live/$FILE \
+       ftp://u306644-sub1:S4yNVUFpRfWABrgP@u306644.your-storagebox.de/$FILE \
+       https://radix-snapshots.b-cdn.net/$FILE
 
 ```
 </details>

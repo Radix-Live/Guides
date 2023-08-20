@@ -18,6 +18,7 @@ data used by the Gateway API.
 ### Restoring from a snapshot
 ##### 0. Prepare
 ```shell
+sudo apt update
 sudo apt install aria2 zstd
 ```
 We need `aria2` to download the archives, and `zstd` to uncompress them.
@@ -29,9 +30,14 @@ radixnode docker stop -f radix-fullnode-compose.yml
 You can find the script to download the latest snapshots here: [Validator](https://snapshots.radix.live/latest-validator.sh)
 or [Gateway](https://snapshots.radix.live/latest-gateway.sh)
 or [Postgres(broken atm)](https://snapshots.radix.live/latest-postgres.sh).  
+It will take up to a minute for the download to reach max speed, and it is OK
+if aria2c drops some of the slowest servers at the start.  
+You can see the number of active connections under "CN:".  
+The progress is saved even if you kill/restart the download.
 
 <details>
   <summary>In case the above link doesn't open</summary>
+
 Here is an example script, but you would need to put the current date in UTC,
 and manually check whether the files actually exist (e.g. `wget &lt;file url&gt;`)
 
@@ -42,8 +48,29 @@ sudo apt install -y aria2
 
 FILE=2023-08-15/RADIXDB-api.tar.zst
 
-aria2c -x3 ftp://snapshots.radix.live/$FILE \
-           ftp://u306644-sub1:S4yNVUFpRfWABrgP@u306644.your-storagebox.de/$FILE
+aria2c -x3 -s16 -k4M --piece-length=4M --disk-cache=256M --lowest-speed-limit=500k \
+       ftp://snapshots.radix.live/$FILE \
+       ftp://u306644-sub1:S4yNVUFpRfWABrgP@u306644.your-storagebox.de/$FILE
+
+```
+</details>
+
+<details>
+  <summary>In case you need an older snapshot</summary>
+
+You can check available files in [StorageBox](https://snapshots.radix.live/Storage-Box/) 
+and [Archive](https://snapshots.radix.live/archive/). Then download like this:
+
+```shell
+#!/bin/bash
+
+sudo apt install -y aria2
+
+FILE=2023-08-15/RADIXDB-api.tar.zst
+
+aria2c -x2 -s16 -k4M --piece-length=4M --disk-cache=256M --lowest-speed-limit=500k \
+       https://snapshots.radix.live/archive/$FILE \
+       ftp://u306644-sub1:S4yNVUFpRfWABrgP@u306644.your-storagebox.de/$FILE
 
 ```
 </details>
