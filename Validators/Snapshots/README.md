@@ -25,8 +25,15 @@ sudo systemctl stop radixdlt-node
   <summary>3a. Fast Download from multiple sources <b>(recommended)</b></summary>
 
 Run [this script](https://snapshots.radix.live/latest-validator.sh) to download the snapshot from up to 3 available mirrors.  
-It will take up to a minute for the download to reach max speed, and it is OK
-if `aria2c` drops some of the slowest servers at the start.  
+It will take up to a minute for the download to reach max speed.  
+You can see messages like this:  
+```
+09/04 12:57:35 [ERROR] CUID#17 - Download aborted. URI=ftp://snapshots-us.radix.live/2023-09-04/RADIXDB-no-api.tar.zst
+Exception: [AbstractCommand.cc:351] errorCode=5 URI=ftp://snapshots-us.radix.live/2023-09-04/RADIXDB-no-api.tar.zst
+  -> [DownloadCommand.cc:309] errorCode=5 Too slow Downloading speed: 149208 <= 256000(B/s), host:snapshots-us.radix.live
+```
+This is not an issue! It means that `aria2c` drops some of the slowest servers, switching to faster ones instead.    
+Just continue download as long as you still have 2-3 or more active connections and/or high (50Mb/s+) download speed.  
 You can see the number of active connections under "CN:".  
 The progress is saved even if you kill/restart the download.
 
