@@ -47,7 +47,7 @@ nano /etc/fstab
 ```
 Append the entry for the second disk, e.g.:
 ``` 
-UUID=52fca22b-b741-4e11-9142-f7bb63ad6e2a /PGDB ext4 defaults 0 0
+UUID=52fca22b-b741-4e11-9142-f7bb63ad6e2a /PGDB ext4 defaults 0 1
 ```
 
 ``` shell
@@ -67,9 +67,9 @@ rm -rf /PGDB/*
 ```
 
 #### 2. Installing Docker via Radix CLI (Command-Line Interface)
-From here on, you should work in `/<your_user>` dir.
+From here on, you should work in your users' home dir.
 ```shell
-cd /$(id -u -n)
+cd ~
 
 # Here you can change the version from "22.04" to "20.04" if needed
 wget -O babylonnode https://github.com/radixdlt/babylon-nodecli/releases/download/2.0.1/babylonnode-ubuntu-22.04
@@ -86,7 +86,7 @@ Exit ssh login and relogin back for user addition to group "docker" to take effe
 This section is a short essence of the [official guide](https://docs.radixdlt.com/main/node-and-gateway/cli-install-node-docker.html),
 please refer to it in case you have any questions.
 ```shell
-cd /$(id -u -n)
+cd ~
 babylonnode docker config -m CORE
 ```
 Enter network: "1", you can skip all other options, we will have all that in the `docker-compose.yml` and `.env` files.  
@@ -162,14 +162,10 @@ docker exec -it root-radix_db-1 psql -U postgres -d radix_ledger -c $'select sta
 You can compare it with the latest state version observed on Radix Ledger (`target_state_version`) to get the overall progress %.
 
 #### 5. Managing the node
-You can start/stop everything (e.g. for server maintenance) by running:
-```
-babylonnode docker stop
-babylonnode docker start
-```
 
 If you change the compose file or the env variables (e.g. during an upgrade to a later version) - you need to recreate the containers:
 ```
+babylonnode docker stop
 babylonnode docker start
 ```
 
