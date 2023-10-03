@@ -1,6 +1,5 @@
 #!/bin/bash
 
-export DISABLE_VERSION_CHECK="true"
-radixnode docker stop -f radix-fullnode-compose.yml
+# Force recreate containers if already running.
+docker compose -f /root/docker-compose.yml up --force-recreate -d
 
-./node-start.sh

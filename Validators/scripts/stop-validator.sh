@@ -1,58 +1,43 @@
 #!/bin/bash
 
-# apt install -y jq
+# apt install -y expect jq
 
+# Note that validators get shuffled at the start of each epoch, so better not run this script close to epoch end
 # Examples:
 # ./stop-validator.sh
 # ./stop-validator.sh force
 # ./stop-validator.sh keep-key
 
-HOST="https://localhost"
+container="root-core-1"
+
 export DISABLE_VERSION_CHECK="true"
 
-VALIDATOR_ADDRESS=$(curl -u superadmin:$NGINX_SUPERADMIN_PASSWORD -k -s -X POST "$HOST/key/list" -H "Content-Type: application/json" \
-                    -d '{"network_identifier": {"network": "mainnet"}}' \
-                    | jq -r ".public_keys[0].identifiers.validator_entity_identifier.address")
+read -r VALIDATOR_ADDRESS CONSENSUS_STATUS < <(echo $(babylonnode api system identity | jq -r '.validator_address, .consensus_status'))
+
 echo "VALIDATOR_ADDRESS: ${VALIDATOR_ADDRESS}"
-IS_VALIDATING=$(curl -u admin:$NGINX_ADMIN_PASSWORD -k -s -X POST "$HOST/entity" -H "Content-Type: application/json" \
-                -d "{\"network_identifier\": {\"network\": \"mainnet\"}, \"entity_identifier\":
-                    {\"address\": \"$VALIDATOR_ADDRESS\", \"sub_entity\": {\"address\": \"system\"}}}" \
-                | jq ".data_objects | any(.type == \"ValidatorBFTData\")")
-echo "IS_VALIDATING: ${IS_VALIDATING}"
+echo "CONSENSUS_STATUS: ${CONSENSUS_STATUS}"
 
-get_completed_proposals () {
-   curl -u admin:$NGINX_ADMIN_PASSWORD -k -s -X POST "$HOST/entity" -H "Content-Type: application/json" \
-   -d "{\"network_identifier\": {\"network\": \"mainnet\"}, \"entity_identifier\":
-      {\"address\": \"$VALIDATOR_ADDRESS\", \"sub_entity\": {\"address\": \"system\"}}}" \
-    | jq ".data_objects[] | select(.type == \"ValidatorBFTData\") | .proposals_completed"
-}
-
-check_return_code () {
-    if [[ $? -eq 0 ]]
-    then
-        echo "Successfully stopped validator node and restarted."
-    else
-        echo "Error: $?"
-    fi
-}
-
-if [[ $IS_VALIDATING == true && "$1" != "force" ]]
+if [[ $CONSENSUS_STATUS == "VALIDATING_IN_CURRENT_EPOCH" && "$1" != "force" ]]
 then
-  PROPOSALS_COMPLETED=$(get_completed_proposals)
-  echo "Wait until node completed proposal to minimise risk of a missed proposal ..."
-  while (( $(get_completed_proposals) == PROPOSALS_COMPLETED)) || (( $(get_completed_proposals) == 0))
-  do
-      echo "Waiting ..."
-      sleep 1
-  done
+  # Monitors the logs, and doesn't catch all the times the validator was leader, so need to wait for a few minutes!
+  # But if leadership was logged - you are guaranteed to have some time before next leadership round.
+  # A BUG HERE - when you do Ctrl+C inside - the script continues! (you can quickly Ctrl+C twice to exit completely)
+  ./expect-leader.sh "docker logs -t $container --tail 2 -f | grep --line-buffered \"leader=\"" "$VALIDATOR_ADDRESS" | grep -E --color "leader=$VALIDATOR_ADDRESS|$"
+  sleep 0.35
+
   echo "Validator completed proposal - stopping now...."
-  radixnode docker stop -f radix-fullnode-compose.yml
-  check_return_code
+  babylonnode docker stop
   if [[ "$1" != "keep-key" ]]
   then
-    mv -f /root/node-config/node-keystore.ks /root/node-config/node-keystore.validator.ks
-    mv -f /root/node-config/node-keystore.blank.ks /root/node-config/node-keystore.ks
+    echo "MOVING KEYS...."
+    ./use-blank-keystore.sh
   fi
+elif [[ "$1" = "force" ]]
+then
+  echo "Force stopping...."
+  babylonnode docker stop
+else
+  echo "Not stopping a node in CONSENSUS_STATUS: ${CONSENSUS_STATUS}"
 fi
 
 echo "Script finished ..."
