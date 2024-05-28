@@ -1,7 +1,11 @@
 ### Restoring from a snapshot for Validators
-This is an excerpt of the [Ledger Snapshots](https://github.com/Radix-Live/Guides/tree/main/LedgerSnapshots) guide
-that briefly describes the commands you need to execute to restore the database of the Validator Node.  
-Please refer to the original guide for detailed explanations.
+::warning:: The below is out of date, please refer to [Ledger Snapshots](https://github.com/Radix-Live/Guides/tree/main/LedgerSnapshots) guide!
+
+
+
+<details>
+  <summary>Olympia stuff</summary>
+
 
 ##### 1. Prepare
 ```shell
@@ -106,7 +110,7 @@ Here `/RADIXDB` is the directory where Node's ledger DB resides. Change it if ne
 ```shell
 LEDGER_DIR=/RADIXDB
 rm -rf $LEDGER_DIR/*
-tar --use-compress-program=zstdmt -xvf RADIXDB-no-api.tar.zst -C $LEDGER_DIR/
+tar --use-compress-program=zstdmt -xvf RADIXDB-no-api.tar.zst --exclude=./address_book -C $LEDGER_DIR/
 ```
 Update permissions
 ```shell
@@ -138,4 +142,4 @@ docker logs -t radixdlt_core_1 2>&1 | head -n 200 | grep "TRANSACTIONS_API_ENABL
 cat /etc/radixdlt/node/default.config | grep "api.transactions.enable"
 ```
 
-
+</details>

@@ -8,12 +8,12 @@ The result of this setup is Gateway API running on `http://<server_ip>:5207`, Co
 
 For additional security, please make sure that none of the exposed ports are accessible from outside your intranet.
 
-This doc is based on Radix [Node](https://docs.radixdlt.com/main/node-and-gateway/node-introduction.html) and [Network Gateway](https://docs.radixdlt.com/main/node-and-gateway/network-gateway.html) setup guides.
+This doc is based on Radix [Node](https://docs.radixdlt.com/docs/node) and [Network Gateway](https://docs.radixdlt.com/docs/network-gateway) setup guides.
 
 
 ## Hardware requirements
 The setup requires maintaining two copies of the Radix Ledger (one for the Radix Node DB, and one in Postgres DB, used by the Data Aggregator and Gateway API itself),
-so the server needs to have 2 separate SSD/NVMe disks. At the moment of writing this, the Ledger size is ~80Gb (stored twice).
+so the server needs to have 2 separate SSD/NVMe disks. At the moment of writing this, the Radix Node DB size is ~200Gb, Postgres DB is ~400Gb.
 
 Minimum - 3/6x 2.5GHz+ CPU, 16 Gb RAM  
 Recommended - 4/8x 3.0GHz+ CPU, 32 Gb RAM  
@@ -72,24 +72,22 @@ From here on, you should work in your users' home dir.
 cd ~
 
 # Here you can change the version from "22.04" to "20.04" if needed
-wget -O babylonnode https://github.com/radixdlt/babylon-nodecli/releases/download/2.0.1/babylonnode-ubuntu-22.04
+wget -O babylonnode https://github.com/radixdlt/babylon-nodecli/releases/download/2.2.0/babylonnode-ubuntu-22.04
 chmod +x babylonnode
 sudo mv babylonnode /usr/local/bin
-
-# Do NOT run it if you already have docker or previously had "radixnode" installed!
-babylonnode docker dependencies
 ```
-Exit ssh login and relogin back for user addition to group "docker" to take effect.
+Exit ssh login and re-login for user addition to group "docker" to take effect.
 
 
 #### 3. Configuring Radix services
-This section is a short essence of the [official guide](https://docs.radixdlt.com/main/node-and-gateway/cli-install-node-docker.html),
+This section is a short essence of the [official guide](https://docs.radixdlt.com/docs/node-setup-guided-installing-node),
 please refer to it in case you have any questions.
+First, we configure `babylonnode` so it can be later used to conveniently start/stop the services:
 ```shell
 cd ~
 babylonnode docker config -m CORE
 ```
-Enter network: "1", you can skip all other options, we will have all that in the `docker-compose.yml` and `.env` files.  
+Enter network: "1", you can skip all other options, we will have all that in the `docker-compose.yml` and env variables.  
 `Okay to update the config file [Y/n]` - Y.
 
 The Radix node setup doc says to run the "install" step with the babylonnode. Do not ever run it! 
@@ -118,24 +116,40 @@ export NODE_0_NAME=NodeZero
 export NODE_0_CORE_API_ADDRESS=http://core:3333/core
 ```
 
-Update the `docker-compose.yml` - adjust `-Xms`, `-Xmx` and `mem_limit` of the `core` service according to the machine's specs (recommended - 1/4 of available RAM, but no more than 8Gb).
+Update the `docker-compose.yml` - adjust `-Xms`, `-Xmx` of the `core` service according to the machine's specs (recommended - 1/4 of available RAM, but no more than 8Gb).
 
 
 Setup nginx passwords (one by one, skip if you won't be using nginx):
 ```shell
 babylonnode auth set-admin-password --setupmode DOCKER
-babylonnode auth set-superadmin-password --setupmode DOCKER
 babylonnode auth set-metrics-password --setupmode DOCKER
 ```
 Add to `~/.bashrc`:
 ```shell
 export NGINX_ADMIN_PASSWORD="pass1"
-export NGINX_SUPERADMIN_PASSWORD="pass2"
-export NGINX_METRICS_PASSWORD="pass3"
+export NGINX_METRICS_PASSWORD="pass2"
 ```
 
 ```
 . ~/.bashrc
+```
+#### 3b. [Optional] Download the latest **unofficial** Node DB snapshot to speed up sync.
+Syncing the  node from scratch takes time (more than 40h atm).  
+To avoid the wait you can download the latest of our daily snapshots.  
+See [The Guide](https://github.com/Radix-Live/Guides/tree/main/LedgerSnapshots) for more details, here are all the shell commands, just update the date (remember, it is perfectly fine to observe the errors during download, as long as DL speed is high!):
+```shell
+sudo apt update
+sudo apt install aria2 zstd
+
+TODAY="2024-05-28"
+aria2c -x3 -s16 -k4M --piece-length=4M --disk-cache=256M --lowest-speed-limit=250k ftp://snapshots.radix.live/$TODAY/RADIXDB-INDEX.tar.zst.metalink
+
+rm -rf /RADIXDB/*
+tar --use-compress-program=zstdmt -xvf RADIXDB-INDEX.tar.zst --exclude=./address_book -C /RADIXDB/
+# Ensure proper permissions
+sudo chown -R systemd-coredump:systemd-coredump /RADIXDB
+# delete the archive after you make sure that the Core Node starts:
+rm RADIXDB-INDEX.tar.zst*
 ```
 
 #### 4. Starting everything
@@ -146,14 +160,12 @@ docker ps -a
 ```
 Check the core container logs (e.g. `docker logs -t root-core-1 --tail 200`) - it should start ingesting the initial Babylon state: `Committing data ingestion chunk`.  
 This will take some time (up to 20 minutes), after which the node should start syncing with the network.  
-Run this a few times with an interval of a dew seconds:
+When the above has finished, run this a few times with an interval of a few seconds:
 ```
 babylonnode api system network-sync-status
 ```
 On a properly running node, you will see that `current_state_version` increases.  
 When it catches up with the `target_state_version` - the node is fully synced.
-
-::warning:: At the moment, the Data Aggregator won't start aggregating until the node is fully synced!
 
 You can check the Data Aggregation progress with:
 ```

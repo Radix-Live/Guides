@@ -1,18 +1,16 @@
 ## Ledger Snapshots
 
 ### Introduction
-After the initial Node installation, there is quite a long period (atm around 18-30 hours)
+After the initial Node installation, there is quite a long period (atm around 36-48 hours)
 when it fetches the ledger state from the network and is not operational.  
 To avoid a long wait, you can restore the state from one of the recent snapshots.  
-You can browse the snapshots [here](https://snapshots.radix.live), but it is better to actually download them from different locations (see below).   
+You can browse the snapshots [here](https://snapshots.radix.live), but you should not download them via any http links - to download please use the scripts below!   
 
-The snapshot directory for each day contains 3 files:
-1. `RADIXDB-api.tar.zst` - Ledger state used by the Radix Node software.  
-The `api` suffix means that it contains all the necessary data for querying raw transactions
-(i.e. for nodes running with flag `RADIXDLT_TRANSACTIONS_API_ENABLE=true`), necessary to run the Gateway API.
-2. `RADIXDB-no-api.tar.zst` - The same ledger state but lacking the raw transactions' data (e.g. for Validators).
-3. `radix_ledger.tar.zst` - The dump of the Postgres DB with aggregated ledger 
-data used by the Gateway API.
+The snapshot directory for each day contains 2 files:
+1. `RADIXDB-INDEX.tar.zst` - Ledger state used by the Radix Node software.  
+The `INDEX` suffix means that it contains all the necessary data for querying raw transactions, necessary to run the Gateway API
+(i.e. designed for nodes running with default config flags).
+2. `RADIXDB-NO-INDEX.tar.zst` - The same ledger state but lacking the raw transactions' data (i.e. for nodes running with flag `RADIXDLT_DB_LOCAL_TRANSACTION_EXECUTION_INDEX_ENABLE=false` and `RADIXDLT_DB_ACCOUNT_CHANGE_INDEX_ENABLE=false`), e.g. for Validators that decided to disable them.
 
 
 ### Restoring from a snapshot
@@ -24,12 +22,11 @@ sudo apt install aria2 zstd
 We need `aria2` to download the archives, and `zstd` to uncompress them.
 ##### 1. Stop the services:
 ```shell
-radixnode docker stop -f radix-fullnode-compose.yml
+babylonnode docker stop
 ```
 ##### 2. Download the snapshot
-You can find the script to download the latest snapshots here: [Validator](https://snapshots.radix.live/latest-validator.sh)
-or [Gateway](https://snapshots.radix.live/latest-gateway.sh)
-or [Postgres(broken atm)](https://snapshots.radix.live/latest-postgres.sh).  
+You can find the script to download the latest snapshots here: [NO-INDEX](https://snapshots.radix.live/latest-snapshot-NO-INDEX.sh)
+or [with INDEX](https://snapshots.radix.live/latest-snapshot-INDEX.sh) (if in doubt - choose INDEX).  
 It will take up to a minute for the download to reach max speed.  
 You can see messages like this:
 ```
@@ -51,14 +48,9 @@ and manually check whether the files actually exist (e.g. `wget <file url>`)
 ```shell
 #!/bin/bash
 
-sudo apt install -y aria2
+sudo apt install -y aria2 zstd
 
-FILE=2023-08-15/RADIXDB-api.tar.zst
-
-aria2c -x3 -s16 -k4M --piece-length=4M --disk-cache=256M --lowest-speed-limit=500k \
-       ftp://snapshots.radix.live/$FILE \
-       ftp://u306644-sub1:S4yNVUFpRfWABrgP@u306644.your-storagebox.de/$FILE
-
+aria2c -x3 -s16 -k4M --piece-length=4M --disk-cache=256M --lowest-speed-limit=250k ftp://snapshots.radix.live/2024-05-28/RADIXDB-INDEX.tar.zst.metalink
 ```
 </details>
 
@@ -73,7 +65,7 @@ and [Archive](https://snapshots.radix.live/archive/). Then download like this:
 
 sudo apt install -y aria2
 
-FILE=2023-08-15/RADIXDB-api.tar.zst
+FILE=2024-05-28/RADIXDB-INDEX.tar.zst
 
 aria2c -x2 -s16 -k4M --piece-length=4M --disk-cache=256M --lowest-speed-limit=500k \
        https://snapshots.radix.live/archive/$FILE \
@@ -82,42 +74,16 @@ aria2c -x2 -s16 -k4M --piece-length=4M --disk-cache=256M --lowest-speed-limit=50
 ```
 </details>
 
-##### 3. Extract the contents of the tarballs into the target locations:
-- a) Radix Ledger (change to `RADIXDB-no-api` if you do not need the raw historical transactions data).
+##### 3. Extract the contents of the tarball into the target location:
+- Radix Ledger (change to `RADIXDB-NO-INDEX` if you do not need the raw historical transactions data).
     ```shell
     rm -rf /RADIXDB/*
-    tar --use-compress-program=zstdmt -xvf RADIXDB-api.tar.zst -C /RADIXDB/
+    tar --use-compress-program=zstdmt -xvf RADIXDB-INDEX.tar.zst --exclude=./address_book -C /RADIXDB/
     # Ensure proper permissions
     sudo chown -R systemd-coredump:systemd-coredump /RADIXDB
-    ```
-- b) Postgres - if you are running Postgres in a Docker container ([**GatewayAPI-Dockerized**](../GatewayAPI-Dockerized))
-    ```shell
-    apt install postgresql-client-12
-    rm -rf /WRITEDB/*
-    docker-compose -f radix-fullnode-compose.yml up -d radix_db
-    tar --use-compress-program=zstdmt -xvf radix_ledger.tar.zst -C ./
-    rm -rf radix_ledger.tar.zst
-    pg_restore -C -d radix_ledger -v -h 127.0.0.1 -p 50032 -U postgres radix_ledger.dump
-    rm -rf radix_ledger.dump
-    ```
-- c) Postgres - if you are running a standalone Postgres ([**GatewayAPI-Full**](../GatewayAPI-Full))
-    ```shell
-    # *not tested, so actual steps might differ a bit, but you get the idea
-    pg_ctlcluster 12 main stop
-    pg_ctlcluster 12 writer stop
-    rm -rf /WRITEDB/data/*
-    rm -rf /READDB/data/*
-    tar --use-compress-program=zstdmt -xvf radix_ledger.tar.zst -C ./
-    rm -rf radix_ledger.tar.zst
-    pg_restore -C -d radix_ledger -v -h 127.0.0.1 -p 5433 -U postgres radix_ledger.dump
-    rm -rf radix_ledger.dump
     ```
 
 ##### 4. Start the services:
 ```shell
-# if you are running a standalone Postgres - start it first
-pg_ctlcluster 12 writer start
-pg_ctlcluster 12 main start
-
-radixnode docker start -f radix-fullnode-compose.yml -t radix://rn1qthu8yn06k75dnwpkysyl8smtwn0v4xy29auzjlcrw7vgduxvnwnst6derj@54.216.99.177
+babylonnode docker start
 ```

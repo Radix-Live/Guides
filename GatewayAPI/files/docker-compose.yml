@@ -1,3 +1,4 @@
+---
 services:
   core:
     cap_add:
@@ -8,15 +9,17 @@ services:
         -Djavax.net.ssl.trustStoreType=jks -Djava.security.egd=file:/dev/urandom -DLog4jContextSelector=org.apache.logging.log4j.core.async.AsyncLoggerContextSelector
       RADIXDLT_API_PORT: 3333
       RADIXDLT_CONSENSUS_VALIDATOR_ADDRESS: ''
+      RADIXDLT_ENGINE_STATE_API_BIND_ADDRESS: 0.0.0.0
+      RADIXDLT_ENGINE_STATE_API_PORT: 3336
       RADIXDLT_LOG_LEVEL: info
       RADIXDLT_NETWORK_ID: 1
       RADIXDLT_NETWORK_SEEDS_REMOTE: ${RADIXDLT_NETWORK_SEEDS_REMOTE}
       RADIXDLT_NETWORK_USE_PROXY_PROTOCOL: 'false'
-      RADIXDLT_VALIDATOR_KEY_LOCATION: /home/radixdlt/node-keystore.ks
+      RADIXDLT_NODE_KEY_CREATE_IF_MISSING: 'true'
+      RADIXDLT_VALIDATOR_KEY_LOCATION: /home/radixdlt/babylon-node-config/node-keystore.ks
       RADIX_NODE_KEYSTORE_PASSWORD: ${RADIXDLT_NODE_KEYSTORE_PASSWORD}
-    image: radixdlt/babylon-node:v1.0.3
+    image: radixdlt/babylon-node:v1.2.1
     init: true
-    mem_limit: 10000m
     stop_grace_period: 60s
     restart: unless-stopped
     ulimits:
@@ -26,7 +29,7 @@ services:
         soft: 65536
     volumes:
       - babylon_ledger:/home/radixdlt/RADIXDB
-      - /root/babylon-node-config/node-keystore.ks:/home/radixdlt/node-keystore.ks
+      - /root/babylon-node-config/:/home/radixdlt/babylon-node-config/
     logging:
       options:
         max-size: '100m'
@@ -48,27 +51,28 @@ services:
       retries: 5
       start_period: 60s
     volumes:
-      - /WRITEDB:/var/lib/postgresql/data
+      - /PGDB:/var/lib/postgresql/data
     #   - ./pgsql/etc/postgresql:/etc/postgresql
   data_aggregator:
     cpus: 2.0
     depends_on:
       radix_db:
-        condition: service_started
+        condition: service_healthy
       database_migrations:
         condition: service_completed_successfully
     environment:
       ASPNETCORE_URLS: http://*:80
-      ConnectionStrings__NetworkGatewayReadWrite: "Host=radix_db;Port=5432;Database=${POSTGRES_DB_NAME};Username=${POSTGRES_SUPERUSER};Password=${POSTGRES_SUPERUSER_PASSWORD}"
+      ConnectionStrings__NetworkGatewayReadWrite: "Host=radix_db:5432;Database=${POSTGRES_DB_NAME};Username=${POSTGRES_SUPERUSER};Password=${POSTGRES_SUPERUSER_PASSWORD}"
       DataAggregator__Network__CoreApiNodes__0__CoreApiAddress: "${NODE_0_CORE_API_ADDRESS}"
       DataAggregator__Network__CoreApiNodes__0__CoreApiAuthorizationHeader: ''
       DataAggregator__Network__CoreApiNodes__0__Enabled: 'true'
       DataAggregator__Network__CoreApiNodes__0__Name: "${NODE_0_NAME}"
       DataAggregator__Network__CoreApiNodes__0__TrustWeighting: '1'
       DataAggregator__Network__DisableCoreApiHttpsCertificateChecks: 'false'
+      DataAggregator__Network__IgnoreNonSyncedNodes: "false"
       DataAggregator__Network__NetworkName: "${NETWORK_NAME}"
       PrometheusMetricsPort: '1234'
-    image: radixdlt/babylon-ng-data-aggregator:v1.0.0
+    image: radixdlt/babylon-ng-data-aggregator:v1.6.1
     ports:
       - "127.0.0.1:5208:80"
       - "127.0.0.1:1234:1234"
@@ -78,8 +82,8 @@ services:
       radix_db:
         condition: service_healthy
     environment:
-      ConnectionStrings__NetworkGatewayMigrations: "Host=radix_db;Port=5432;Database=${POSTGRES_DB_NAME};Username=${POSTGRES_SUPERUSER};Password=${POSTGRES_SUPERUSER_PASSWORD}"
-    image: radixdlt/babylon-ng-database-migrations:v1.0.0
+      ConnectionStrings__NetworkGatewayMigrations: "Host=radix_db:5432;Database=${POSTGRES_DB_NAME};Username=${POSTGRES_SUPERUSER};Password=${POSTGRES_SUPERUSER_PASSWORD}"
+    image: radixdlt/babylon-ng-database-migrations:v1.6.1
   gateway_api:
     environment:
       ASPNETCORE_URLS: http://*:80
@@ -101,22 +105,24 @@ services:
       GatewayApi__Network__DisableCoreApiHttpsCertificateChecks: 'false'
       GatewayApi__Network__NetworkName: "${NETWORK_NAME}"
       PrometheusMetricsPort: '1235'
-    image: radixdlt/babylon-ng-gateway-api:v1.0.0
+    image: radixdlt/babylon-ng-gateway-api:v1.6.1
     ports:
       - "5207:80"
       - "127.0.0.1:1235:1235"
     restart: unless-stopped
     depends_on:
       radix_db:
-        condition: service_started
+        condition: service_healthy
       database_migrations:
         condition: service_completed_successfully
   nginx:
     environment:
+      RADIXDLT_ENGINE_STATE_ENABLE: 'false'
+      RADIXDLT_ENGINE_STATE_PORT: '3336'
       RADIXDLT_GATEWAY_API_ENABLE: 'true'
       RADIXDLT_GATEWAY_BEHIND_AUTH: 'false'
       RADIXDLT_NETWORK_USE_PROXY_PROTOCOL: 'false'
-    image: radixdlt/babylon-nginx:1.0.1
+    image: radixdlt/babylon-nginx:1.0.8
     ports:
       - "443:443"
       - "30000:30000"
@@ -127,7 +133,6 @@ services:
         soft: 65536
     volumes:
       - nginx_secrets:/etc/nginx/secrets
-version: '3.8'
 volumes:
   babylon_ledger:
     driver: local
