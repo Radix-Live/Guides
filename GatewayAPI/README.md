@@ -4,7 +4,7 @@
 The setup includes: Radix Node + Data Aggregator + Gateway API + Postgres DB, all running on the same dedicated server via Docker Compose.
 A Fully Dockerized setup is recommended due to its simplicity and is usually performant enough for private usage of the Gateway API.
 
-The result of this setup is Gateway API running on `http://<server_ip>:5207`, Core/System API - on `https://<server_ip>:443` (requires authentication with admin/superadmin passwords).
+The result of this setup is Gateway API running on `http://<server_ip>:5207`, Core/System API - on `https://<server_ip>:443` (requires authentication with an admin password).
 
 For additional security, please make sure that none of the exposed ports are accessible from outside your intranet.
 
@@ -75,6 +75,8 @@ cd ~
 wget -O babylonnode https://github.com/radixdlt/babylon-nodecli/releases/download/2.2.0/babylonnode-ubuntu-22.04
 chmod +x babylonnode
 sudo mv babylonnode /usr/local/bin
+
+babylonnode docker dependencies
 ```
 Exit ssh login and re-login for user addition to group "docker" to take effect.
 
@@ -116,9 +118,6 @@ export NODE_0_NAME=NodeZero
 export NODE_0_CORE_API_ADDRESS=http://core:3333/core
 ```
 
-Update the `docker-compose.yml` - adjust `-Xms`, `-Xmx` of the `core` service according to the machine's specs (recommended - 1/4 of available RAM, but no more than 8Gb).
-
-
 Setup nginx passwords (one by one, skip if you won't be using nginx):
 ```shell
 babylonnode auth set-admin-password --setupmode DOCKER
@@ -146,8 +145,7 @@ aria2c -x3 -s16 -k4M --piece-length=4M --disk-cache=256M --lowest-speed-limit=25
 
 rm -rf /RADIXDB/*
 tar --use-compress-program=zstdmt -xvf RADIXDB-INDEX.tar.zst --exclude=./address_book -C /RADIXDB/
-# Ensure proper permissions
-sudo chown -R systemd-coredump:systemd-coredump /RADIXDB
+
 # delete the archive after you make sure that the Core Node starts:
 rm RADIXDB-INDEX.tar.zst*
 ```
