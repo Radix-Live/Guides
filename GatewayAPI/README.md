@@ -132,7 +132,7 @@ export NGINX_METRICS_PASSWORD="pass2"
 ```
 . ~/.bashrc
 ```
-#### 3b. [Optional] Download the latest **unofficial** Node DB snapshot to speed up sync.
+#### 4. [Optional] Download the latest **unofficial** Node DB snapshot to speed up sync.
 Syncing the  node from scratch takes time (more than 40h atm).  
 To avoid the wait you can download the latest of our daily snapshots.  
 See [The Guide](https://github.com/Radix-Live/Guides/tree/main/LedgerSnapshots) for more details, here are all the shell commands, just update the date (remember, it is perfectly fine to observe the errors during download, as long as DL speed is high!):
@@ -150,7 +150,7 @@ tar --use-compress-program=zstdmt -xvf RADIXDB-INDEX.tar.zst --exclude=./address
 rm RADIXDB-INDEX.tar.zst*
 ```
 
-#### 4. Starting everything
+#### 5. Starting everything
 Now, let's test if everything is OK so far. Start everything:
 ```
 babylonnode docker start
@@ -171,7 +171,7 @@ docker exec -it root-radix_db-1 psql -U postgres -d radix_ledger -c $'select sta
 ```
 You can compare it with the latest state version observed on Radix Ledger (`target_state_version`) to get the overall progress %.
 
-#### 5. Managing the node
+#### 6. Managing the node
 
 If you change the compose file or the env variables (e.g. during an upgrade to a later version) - you need to recreate the containers:
 ```
