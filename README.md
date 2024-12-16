@@ -26,8 +26,8 @@ See the spec on [ReDoc](https://redocly.github.io/redoc/?url=https://raw.githubu
 7. Daily snapshots of Radix Node database and Gateway API database at [snapshots.radix.live](https://snapshots.radix.live/).
 See the [Guide](https://github.com/Radix-Live/Guides/tree/main/LedgerSnapshots).
 8. Mainnet:
-    - Gateway API: [gateway.radix.live](https://gateway.radix.live)
-    - Core API: [core.radix.live/core](https://core.radix.live/core)
+    - Gateway API: [gateway.radix.live](https://gateway.radix.live)     [[Redocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/Radix-Live/radix-java-common/main/babylon-gateway-client/gateway-api-schema.yaml)] [[Try it](https://gateway.radix.live/swagger/index.html)]
+    - Core API: [core.radix.live/core](https://core.radix.live/core)     [[Redocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/Radix-Live/radix-java-common/main/babylon-core-client/core-api-schema.yaml)] [[Try it](https://petstore3.swagger.io/?url=https://raw.githubusercontent.com/Radix-Live/radix-java-common/main/babylon-core-client/core-api-schema.yaml)]
     - Gateway DB (`postgresql://radix:radix@db.radix.live/radix_ledger`):
         - Host: db.radix.live
         - Port: default (5432)
@@ -35,8 +35,8 @@ See the [Guide](https://github.com/Radix-Live/Guides/tree/main/LedgerSnapshots).
         - Password: radix
         - Database: radix_ledger
 9. Stokenet:
-    - Gateway API: [stokenet-gateway.radix.live](https://stokenet-gateway.radix.live)
-    - Core API: [stokenet-core.radix.live/core](https://stokenet-core.radix.live/core)
+    - Gateway API: [stokenet-gateway.radix.live](https://stokenet-gateway.radix.live)     [[Redocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/Radix-Live/radix-java-common/main/babylon-gateway-client/gateway-api-schema.yaml)] [[Try it](https://stokenet-gateway.radix.live/swagger/index.html)]
+    - Core API: [stokenet-core.radix.live/core](https://stokenet-core.radix.live/core)     [[Redocly](https://redocly.github.io/redoc/?url=https://raw.githubusercontent.com/Radix-Live/radix-java-common/main/babylon-core-client/core-api-schema.yaml)] [[Try it](https://petstore3.swagger.io/?url=https://raw.githubusercontent.com/Radix-Live/radix-java-common/main/babylon-core-client/core-api-schema.yaml)]
     - Gateway DB (`postgresql://radix:radix@stokenet-db.radix.live/radix_ledger`):
       - Host: stokenet-db.radix.live
       - Port: default (5432)
