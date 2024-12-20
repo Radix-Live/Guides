@@ -13,7 +13,7 @@ This doc is based on Radix [Node](https://docs.radixdlt.com/docs/node) and [Netw
 
 ## Hardware requirements
 The setup requires maintaining two copies of the Radix Ledger (one for the Radix Node DB, and one in Postgres DB, used by the Data Aggregator and Gateway API itself),
-so the server needs to have 2 separate SSD/NVMe disks. At the moment of writing this, the Radix Node DB size is ~200Gb, Postgres DB is ~400Gb.
+so the server needs to have 2 separate SSD/NVMe disks. At the moment of writing this, the Radix Node DB size is ~300Gb, Postgres DB is ~900Gb.
 
 Minimum - 3/6x 2.5GHz+ CPU, 16 Gb RAM  
 Recommended - 4/8x 3.0GHz+ CPU, 32 Gb RAM  
