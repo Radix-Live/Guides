@@ -64,6 +64,9 @@ df -h # check that it mounted
 
 rm -rf /RADIXDB/*
 rm -rf /PGDB/*
+
+# Reserve no more than 1% of disk for root user
+tune2fs -m 1 /dev/nvme1n1
 ```
 
 #### 2. Installing Docker via Radix CLI (Command-Line Interface)
@@ -72,12 +75,18 @@ From here on, you should work in your users' home dir.
 cd ~
 
 # Here you can change the version from "22.04" to "20.04" if needed
-wget -O babylonnode https://github.com/radixdlt/babylon-nodecli/releases/download/2.2.0/babylonnode-ubuntu-22.04
+wget -O babylonnode https://github.com/radixdlt/babylon-nodecli/releases/download/2.2.4/babylonnode-ubuntu-22.04
 chmod +x babylonnode
 sudo mv babylonnode /usr/local/bin
 
 babylonnode docker dependencies
 ```
+
+In Ubuntu 24 the above command results in an error at the last step. As a workaround, install ansbile manually:
+```shell
+pip install --user ansible==2.10.0 --break-system-packages
+```
+
 Exit ssh login and re-login for user addition to group "docker" to take effect.
 
 
